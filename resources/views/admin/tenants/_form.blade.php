@@ -38,8 +38,28 @@
             </div>
           </div>
 
+          @unless ($tenant->exists)
+            <hr>
+            <h6 class="mb-3">Company Admin <small class="text-muted">— the first login for this company</small></h6>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Admin Name <span class="text-danger">*</span></label>
+                <input type="text" name="admin_name" class="form-control @error('admin_name') is-invalid @enderror"
+                       value="{{ old('admin_name') }}" required>
+                @error('admin_name')<div class="invalid-feedback">{{ $message }}</div>@enderror
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Admin Email <span class="text-danger">*</span></label>
+                <input type="email" name="admin_email" class="form-control @error('admin_email') is-invalid @enderror"
+                       value="{{ old('admin_email') }}" required>
+                @error('admin_email')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                <small class="text-muted">A generated password is emailed here. They set their own on first login.</small>
+              </div>
+            </div>
+          @endunless
+
           <div class="mt-3">
-            <button type="submit" class="btn btn-primary">Save Tenant</button>
+            <button type="submit" class="btn btn-primary">{{ $tenant->exists ? 'Save Company' : 'Create Company &amp; Admin' }}</button>
             <a href="{{ route('admin.tenants.index') }}" class="btn btn-light">Cancel</a>
           </div>
         </form>

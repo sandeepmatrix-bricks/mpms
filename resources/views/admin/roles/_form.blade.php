@@ -1,47 +1,52 @@
+@php($selected = collect(old('permissions', $selected ?? []))->map(fn ($v) => (string) $v))
 <div class="row">
-  <div class="col-sm-12">
+  <div class="col-lg-9">
     <div class="card">
       <div class="card-body">
         <form method="POST" action="{{ $action }}">
           @csrf
           @if ($method !== 'POST') @method($method) @endif
 
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Name <span class="text-danger">*</span></label>
-              <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
-                     value="{{ old('name', $role->name) }}" required>
-              @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Scope <span class="text-danger">*</span></label>
-              <select name="scope" class="form-select">
-                @foreach (['platform', 'tenant'] as $scope)
-                  <option value="{{ $scope }}" @selected(old('scope', $role->scope ?? 'tenant') === $scope)>{{ ucfirst($scope) }}</option>
-                @endforeach
-              </select>
-              <small class="text-muted">Platform roles oversee all companies; tenant roles are scoped to one.</small>
-            </div>
+          <div class="mb-3">
+            <label class="form-label">Role name <span class="text-danger">*</span></label>
+            <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
+                   value="{{ old('name', $role->name) }}" placeholder="e.g. Support Admin, Billing Admin" required>
+            @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
           </div>
 
-          <div class="mb-3">
-            <label class="form-label">Permissions</label>
-            @if ($permissions->isEmpty())
-              <p class="text-muted mb-0">No permissions defined yet. Create some under <a href="{{ route('admin.permissions.index') }}">Permissions</a>.</p>
-            @else
-              <div class="row">
-                @foreach ($permissions as $permission)
-                  <div class="col-md-4 col-sm-6">
-                    <div class="form-check">
-                      <input class="form-check-input" type="checkbox" name="permissions[]" value="{{ $permission->id }}"
-                             id="perm-{{ $permission->id }}"
-                             @checked(in_array($permission->id, old('permissions', $selected)))>
-                      <label class="form-check-label" for="perm-{{ $permission->id }}"><code>{{ $permission->key }}</code></label>
-                    </div>
-                  </div>
+          <label class="form-label mb-1">Permissions</label>
+          <p class="text-muted mb-2" style="font-size:13px;">
+            Tick what this role can do per module. <strong>Read</strong> = view, <strong>Write</strong> = create,
+            <strong>Edit</strong> = update, <strong>Delete</strong> = remove. New modules appear here automatically.
+          </p>
+
+          <div class="table-responsive">
+            <table class="table table-bordered align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Module</th>
+                  @foreach ($actions as $action)
+                    <th class="text-center text-capitalize">{{ $action }}</th>
+                  @endforeach
+                </tr>
+              </thead>
+              <tbody>
+                @foreach ($modules as $modKey => $modLabel)
+                  <tr>
+                    <td class="f-w-600">{{ $modLabel }}</td>
+                    @foreach ($actions as $action)
+                      @php($pid = $permMap[$modKey.'.'.$action] ?? null)
+                      <td class="text-center">
+                        @if ($pid)
+                          <input class="form-check-input" type="checkbox" name="permissions[]"
+                                 value="{{ $pid }}" @checked($selected->contains((string) $pid))>
+                        @endif
+                      </td>
+                    @endforeach
+                  </tr>
                 @endforeach
-              </div>
-            @endif
+              </tbody>
+            </table>
           </div>
 
           <div class="mt-3">

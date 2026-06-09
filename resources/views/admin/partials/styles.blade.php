@@ -4,8 +4,8 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <meta name="description" content="MPMS — Multi-tenant Portal Management System">
 <meta name="author" content="MPMS">
-<link rel="icon" href="{{ asset('admin-assets/images/favicon.png') }}" type="image/x-icon">
-<link rel="shortcut icon" href="{{ asset('admin-assets/images/favicon.png') }}" type="image/x-icon">
+<link rel="icon" href="{{ asset('admin-assets/images/favicon.ico') }}" type="image/x-icon">
+<link rel="shortcut icon" href="{{ asset('admin-assets/images/favicon.ico') }}" type="image/x-icon">
 <title>@yield('title', 'Dashboard') · MPMS</title>
 
 {{-- Google font --}}

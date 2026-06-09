@@ -10,9 +10,11 @@
       <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
           <h4 class="mb-0">Roles</h4>
-          <a href="{{ route('admin.roles.create') }}" class="btn btn-primary d-flex align-items-center gap-1">
-            <i data-feather="plus-circle" style="width:16px;"></i> Add Role
-          </a>
+          @permission('roles.write')
+            <a href="{{ route('admin.roles.create') }}" class="btn btn-primary d-flex align-items-center gap-1">
+              <i data-feather="plus-circle" style="width:16px;"></i> Add Role
+            </a>
+          @endpermission
         </div>
         <div class="card-body">
           <div class="table-responsive">
@@ -28,10 +30,12 @@
                     <td class="text-end">{{ $role->permissions_count }}</td>
                     <td class="text-end">{{ $role->memberships_count }}</td>
                     <td class="text-end">
-                      <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
-                        <i data-feather="edit-2" style="width:15px;height:15px;"></i>
-                      </a>
-                      <x-admin.delete-button :action="route('admin.roles.destroy', $role)" />
+                      @permission('roles.edit')
+                        <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                      @endpermission
+                      @permission('roles.delete')
+                        <x-admin.delete-button :action="route('admin.roles.destroy', $role)" />
+                      @endpermission
                     </td>
                   </tr>
                 @empty

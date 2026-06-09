@@ -36,21 +36,47 @@
           </a>
         </li>
 
-        <li class="sidebar-main-title"><div><h6>Content</h6></div></li>
-        <li class="sidebar-list">
-          <i class="fa fa-thumb-tack"></i>
-          <a class="sidebar-link sidebar-title {{ $contentActive ? 'active' : '' }}" href="javascript:void(0)">
-            <svg class="stroke-icon"><use href="{{ $sprite }}#stroke-layout"></use></svg>
-            <svg class="fill-icon"><use href="{{ $sprite }}#fill-layout"></use></svg>
-            <span>Site Builder</span>
-          </a>
-          <ul class="sidebar-submenu" style="display: {{ $contentActive ? 'block' : 'none' }};">
-            <li><a class="{{ $nav('tenant.pages.*') }}" href="{{ route('tenant.pages.index', $tenant) }}">Pages</a></li>
-            <li><a class="{{ $nav('tenant.page-blocks.*') }}" href="{{ route('tenant.page-blocks.index', $tenant) }}">Page Sections</a></li>
-            <li><a class="{{ $nav('tenant.collections.*') }}" href="{{ route('tenant.collections.index', $tenant) }}">Collections</a></li>
-            <li><a class="{{ $nav('tenant.records.*') }}" href="{{ route('tenant.records.index', $tenant) }}">Records</a></li>
-          </ul>
-        </li>
+        @if (auth()->user()?->hasPermission('manage_users') || auth()->user()?->hasPermission('manage_roles'))
+          <li class="sidebar-main-title"><div><h6>Company</h6></div></li>
+          @permission('manage_users')
+            <li class="sidebar-list">
+              <i class="fa fa-thumb-tack"></i>
+              <a class="sidebar-link sidebar-title link-nav {{ $nav('tenant.users.*') }}" href="{{ route('tenant.users.index', $tenant) }}">
+                <svg class="stroke-icon"><use href="{{ $sprite }}#stroke-user"></use></svg>
+                <svg class="fill-icon"><use href="{{ $sprite }}#fill-user"></use></svg>
+                <span>Team</span>
+              </a>
+            </li>
+          @endpermission
+          @permission('manage_roles')
+            <li class="sidebar-list">
+              <i class="fa fa-thumb-tack"></i>
+              <a class="sidebar-link sidebar-title link-nav {{ $nav('tenant.roles.*') }}" href="{{ route('tenant.roles.index', $tenant) }}">
+                <svg class="stroke-icon"><use href="{{ $sprite }}#stroke-knowledgebase"></use></svg>
+                <svg class="fill-icon"><use href="{{ $sprite }}#fill-knowledgebase"></use></svg>
+                <span>Roles</span>
+              </a>
+            </li>
+          @endpermission
+        @endif
+
+        @permission('manage_pages')
+          <li class="sidebar-main-title"><div><h6>Content</h6></div></li>
+          <li class="sidebar-list">
+            <i class="fa fa-thumb-tack"></i>
+            <a class="sidebar-link sidebar-title {{ $contentActive ? 'active' : '' }}" href="javascript:void(0)">
+              <svg class="stroke-icon"><use href="{{ $sprite }}#stroke-layout"></use></svg>
+              <svg class="fill-icon"><use href="{{ $sprite }}#fill-layout"></use></svg>
+              <span>Site Builder</span>
+            </a>
+            <ul class="sidebar-submenu" style="display: {{ $contentActive ? 'block' : 'none' }};">
+              <li><a class="{{ $nav('tenant.pages.*') }}" href="{{ route('tenant.pages.index', $tenant) }}">Pages</a></li>
+              <li><a class="{{ $nav('tenant.page-blocks.*') }}" href="{{ route('tenant.page-blocks.index', $tenant) }}">Page Sections</a></li>
+              <li><a class="{{ $nav('tenant.collections.*') }}" href="{{ route('tenant.collections.index', $tenant) }}">Collections</a></li>
+              <li><a class="{{ $nav('tenant.records.*') }}" href="{{ route('tenant.records.index', $tenant) }}">Records</a></li>
+            </ul>
+          </li>
+        @endpermission
       </ul>
     </div>
     <div class="right-arrow" id="right-arrow"><i data-feather="arrow-right"></i></div>

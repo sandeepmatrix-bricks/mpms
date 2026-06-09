@@ -26,9 +26,7 @@
                     <td><code>{{ $permission->key }}</code></td>
                     <td class="text-end">{{ $permission->roles_count }}</td>
                     <td class="text-end">
-                      <a href="{{ route('admin.permissions.edit', $permission) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
-                        <i data-feather="edit-2" style="width:15px;height:15px;"></i>
-                      </a>
+                      <a href="{{ route('admin.permissions.edit', $permission) }}" class="btn btn-sm btn-outline-primary me-1">Edit</a>
                       <x-admin.delete-button :action="route('admin.permissions.destroy', $permission)" />
                     </td>
                   </tr>

@@ -38,9 +38,30 @@
                     <td class="text-end">{{ $tenant->collections_count }}</td>
                     <td class="text-end">{{ $tenant->memberships_count }}</td>
                     <td class="text-end">
+                      <a href="{{ route('tenant.dashboard', $tenant) }}" class="btn btn-sm btn-outline-secondary me-1" title="Open company portal">
+                        <i data-feather="external-link" style="width:15px;height:15px;"></i>
+                      </a>
                       <a href="{{ route('admin.tenants.edit', $tenant) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
                         <i data-feather="edit-2" style="width:15px;height:15px;"></i>
                       </a>
+
+                      <form method="POST" action="{{ route('admin.tenants.reset-password', $tenant) }}" class="d-inline"
+                            onsubmit="return confirm('Generate a new password for this company admin and email it?');">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-warning me-1" title="Reset admin password">
+                          <i data-feather="key" style="width:15px;height:15px;"></i>
+                        </button>
+                      </form>
+
+                      <form method="POST" action="{{ route('admin.tenants.toggle-status', $tenant) }}" class="d-inline">
+                        @csrf
+                        <button type="submit"
+                                class="btn btn-sm btn-outline-{{ $tenant->status === 'active' ? 'dark' : 'success' }} me-1"
+                                title="{{ $tenant->status === 'active' ? 'Deactivate' : 'Activate' }}">
+                          <i data-feather="{{ $tenant->status === 'active' ? 'slash' : 'check-circle' }}" style="width:15px;height:15px;"></i>
+                        </button>
+                      </form>
+
                       <x-admin.delete-button :action="route('admin.tenants.destroy', $tenant)" />
                     </td>
                   </tr>

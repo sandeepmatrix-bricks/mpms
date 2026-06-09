@@ -9,7 +9,7 @@
         <div>
           <div class="text-center mb-4">
             <a class="logo" href="{{ route('admin.login') }}">
-              <img class="img-fluid for-light" src="{{ asset('admin-assets/images/logo/logo_dark.png') }}" alt="MPMS">
+              <img class="img-fluid for-light" src="{{ asset('admin-assets/images/logo/logo.png') }}" alt="MPMS">
               <img class="img-fluid for-dark" src="{{ asset('admin-assets/images/logo/logo.png') }}" alt="MPMS">
             </a>
           </div>

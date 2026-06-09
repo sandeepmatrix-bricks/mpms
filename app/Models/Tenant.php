@@ -12,14 +12,30 @@ class Tenant extends Model
     use HasFactory, HasUuids;
 
     protected $keyType = 'string';
+
     public $incrementing = false;
 
     protected $fillable = [
         'name',
         'slug',
+        'email',
+        'phone',
+        'address',
+        'gst_number',
+        'plan',
         'status',
         'settings',
     ];
+
+    public function roles(): HasMany
+    {
+        return $this->hasMany(Role::class);
+    }
+
+    public function jobCategories(): HasMany
+    {
+        return $this->hasMany(JobCategory::class);
+    }
 
     protected $casts = [
         'settings' => 'array',

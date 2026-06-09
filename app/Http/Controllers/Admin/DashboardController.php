@@ -3,11 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Collection;
-use App\Models\Membership;
-use App\Models\Page;
-use App\Models\PageBlock;
-use App\Models\Record;
+use App\Models\ActivityLog;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\View\View;
@@ -15,37 +11,21 @@ use Illuminate\View\View;
 class DashboardController extends Controller
 {
     /**
-     * Platform overview. The EnsureAdmin middleware has put the request in
-     * platform mode, so the tenant global scope is bypassed and these counts
-     * span every company.
+     * Platform overview — a clean summary of companies and users.
      */
     public function index(): View
     {
         $stats = [
-            'tenants' => Tenant::count(),
-            'users' => User::count(),
-            'pages' => Page::count(),
-            'collections' => Collection::count(),
-            'records' => Record::count(),
-            'memberships' => Membership::count(),
+            'companies' => Tenant::count(),
+            'active' => Tenant::where('status', 'active')->count(),
+            'inactive' => Tenant::where('status', 'inactive')->count(),
+            'users' => User::where('is_admin', false)->count(),
         ];
 
-        $tenants = Tenant::query()
-            ->withCount(['pages', 'collections'])
-            ->orderBy('name')
-            ->get()
-            ->map(function (Tenant $tenant): Tenant {
-                $tenant->records_count = Record::where('tenant_id', $tenant->id)->count();
+        $companies = Tenant::withCount('memberships')->latest()->take(8)->get();
 
-                return $tenant;
-            });
+        $recentActivity = ActivityLog::with(['user', 'tenant'])->latest()->limit(12)->get();
 
-        // Sections grouped by type across every company (pie chart).
-        $sectionsByType = PageBlock::query()
-            ->selectRaw('type, COUNT(*) as total')
-            ->groupBy('type')
-            ->pluck('total', 'type');
-
-        return view('admin.dashboard', compact('stats', 'tenants', 'sectionsByType'));
+        return view('admin.dashboard', compact('stats', 'companies', 'recentActivity'));
     }
 }

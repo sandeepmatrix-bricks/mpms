@@ -4,7 +4,7 @@
       onsubmit="return confirm('Are you sure? This action cannot be undone.');">
   @csrf
   @method('DELETE')
-  <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ $label }}">
-    <i data-feather="trash-2" style="width:15px;height:15px;"></i>
+  <button type="submit" class="btn btn-sm btn-danger" title="{{ $label }}">
+    Delete
   </button>
 </form>
