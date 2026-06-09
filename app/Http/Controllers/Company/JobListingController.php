@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Company;
 
+use App\Http\Controllers\Company\Concerns\ScopesToDepartments;
 use App\Http\Controllers\Controller;
 use App\Models\JobCategory;
 use App\Models\JobListing;
@@ -15,15 +16,20 @@ use Illuminate\View\View;
 /**
  * Job Management → Designations (the reference's career_category_listing).
  * A designation is a job role posted under a department. Tenant-scoped and
- * gated by the jobs module (read/write/edit/delete).
+ * gated by the jobs module (read/write/edit/delete). Department-restricted
+ * users only see and manage designations within their assigned departments.
  */
 class JobListingController extends Controller
 {
+    use ScopesToDepartments;
+
     public function index(Request $request): View
     {
         $company = $this->company($request);
+        $assigned = $this->assignedDepartments($request, $company);
 
         $listings = JobListing::where('tenant_id', $company->id)
+            ->when($assigned !== null, fn ($q) => $q->whereIn('job_category_id', $assigned))
             ->with('category')
             ->latest()
             ->get();
@@ -38,7 +44,7 @@ class JobListingController extends Controller
         return view('company.job_listings.create', [
             'company' => $company,
             'listing' => new JobListing,
-            'categories' => $this->categories($company),
+            'categories' => $this->categories($company, $this->assignedDepartments($request, $company)),
         ]);
     }
 
@@ -46,6 +52,7 @@ class JobListingController extends Controller
     {
         $company = $this->company($request);
         $data = $this->validated($request, $company);
+        $this->ensureDepartmentInScope($this->assignedDepartments($request, $company), $data['job_category_id']);
 
         JobListing::create([
             'tenant_id' => $company->id,
@@ -68,11 +75,13 @@ class JobListingController extends Controller
     {
         $company = $this->company($request);
         $this->ensureOwned($company, $jobListing);
+        $assigned = $this->assignedDepartments($request, $company);
+        $this->ensureDepartmentInScope($assigned, $jobListing->job_category_id);
 
         return view('company.job_listings.edit', [
             'company' => $company,
             'listing' => $jobListing,
-            'categories' => $this->categories($company),
+            'categories' => $this->categories($company, $assigned),
         ]);
     }
 
@@ -80,8 +89,11 @@ class JobListingController extends Controller
     {
         $company = $this->company($request);
         $this->ensureOwned($company, $jobListing);
+        $assigned = $this->assignedDepartments($request, $company);
+        $this->ensureDepartmentInScope($assigned, $jobListing->job_category_id);
 
         $data = $this->validated($request, $company);
+        $this->ensureDepartmentInScope($assigned, $data['job_category_id']);
 
         $jobListing->update([
             'job_category_id' => $data['job_category_id'],
@@ -103,6 +115,7 @@ class JobListingController extends Controller
     {
         $company = $this->company($request);
         $this->ensureOwned($company, $jobListing);
+        $this->ensureDepartmentInScope($this->assignedDepartments($request, $company), $jobListing->job_category_id);
 
         $role = $jobListing->job_role;
         $jobListing->delete();
@@ -115,9 +128,13 @@ class JobListingController extends Controller
         return $request->user()->company();
     }
 
-    private function categories(Tenant $company)
+    private function categories(Tenant $company, ?array $assigned = null)
     {
-        return JobCategory::where('tenant_id', $company->id)->where('status', 'active')->orderBy('name')->get();
+        return JobCategory::where('tenant_id', $company->id)
+            ->where('status', 'active')
+            ->when($assigned !== null, fn ($q) => $q->whereIn('id', $assigned))
+            ->orderBy('name')
+            ->get();
     }
 
     private function ensureOwned(Tenant $company, JobListing $listing): void

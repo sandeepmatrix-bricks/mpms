@@ -49,6 +49,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('login', [AdminAuthController::class, 'login'])->name('login.attempt');
     Route::post('logout', [AdminAuthController::class, 'logout'])->name('logout');
 
+    /* Self-service password reset. */
+    Route::get('password/forgot', [AdminAuthController::class, 'showForgot'])->name('password.request');
+    Route::post('password/forgot', [AdminAuthController::class, 'sendResetLink'])->name('password.email');
+    Route::get('password/reset/{token}', [AdminAuthController::class, 'showReset'])->name('password.reset');
+    Route::post('password/reset', [AdminAuthController::class, 'resetPassword'])->name('password.update');
+
     Route::middleware('admin')->group(function () {
         Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
 
@@ -133,6 +139,12 @@ Route::prefix('company')->name('company.')->group(function () {
     Route::get('login', [CompanyAuthController::class, 'showLogin'])->name('login');
     Route::post('login', [CompanyAuthController::class, 'login'])->name('login.attempt');
     Route::post('logout', [CompanyAuthController::class, 'logout'])->name('logout');
+
+    /* Self-service password reset. */
+    Route::get('password/forgot', [CompanyAuthController::class, 'showForgot'])->name('password.request');
+    Route::post('password/forgot', [CompanyAuthController::class, 'sendResetLink'])->name('password.email');
+    Route::get('password/reset/{token}', [CompanyAuthController::class, 'showReset'])->name('password.reset');
+    Route::post('password/reset', [CompanyAuthController::class, 'resetPassword'])->name('password.update');
 
     Route::middleware(['auth', 'resolve.company'])->group(function () {
         Route::get('/', [CompanyDashboardController::class, 'index'])->name('dashboard');

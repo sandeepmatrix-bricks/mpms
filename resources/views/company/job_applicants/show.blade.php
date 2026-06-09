@@ -9,10 +9,41 @@
 
 @php($teal = 'background:#0d6e6e;')
 
+@push('page-styles')
+<style>
+  .applicant-page .card { border:0; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; }
+  .applicant-page .card-header { border:0; padding:.85rem 1.1rem; }
+  .applicant-hero { border-radius:14px; background:linear-gradient(135deg,#0d6e6e,#0a5757); }
+  .applicant-hero .btn { border-radius:50rem; font-weight:600; }
+  .applied-pill { background:#e7f4f4; color:#0d6e6e; border-radius:50rem; padding:.5rem 1rem; font-weight:600; }
+  .info-list > div { padding:.45rem 0; border-bottom:1px solid #f1f5f9; font-size:.92rem; }
+  .info-list > div:last-child { border-bottom:0; }
+  .info-list .lbl { font-weight:700; color:#334155; display:inline-block; min-width:90px; }
+  .applicant-photo { width:140px; height:140px; object-fit:cover; border-radius:14px; border:4px solid #e7f4f4; }
+  .doc-btn { border-radius:50rem !important; font-weight:600; }
+
+  /* Activity chat */
+  .chat-card .card-header { display:flex; align-items:center; }
+  .online-dot { width:9px; height:9px; border-radius:50%; background:#34d399; display:inline-block; margin-right:7px; box-shadow:0 0 0 3px rgba(52,211,153,.25); }
+  #chat-messages { scrollbar-width:thin; }
+  .chat-msg { margin-bottom:14px; }
+  .msg-bubble { position:relative; max-width:88%; padding:8px 12px; border-radius:14px; border:1px solid #e8edf2; font-size:13px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .msg-author { font-size:11px; font-weight:700; color:#0d6e6e; margin-bottom:2px; }
+  .msg-time { font-size:10px; color:#94a3b8; margin-top:3px; }
+  .msg-actions { position:absolute; top:-12px; right:8px; background:#fff; border:1px solid #e8edf2; border-radius:50rem; padding:1px 8px; box-shadow:0 2px 8px rgba(0,0,0,.1); opacity:0; transition:opacity .15s; white-space:nowrap; }
+  .chat-msg:hover .msg-actions { opacity:1; }
+  .chat-composer { display:flex; align-items:center; gap:4px; background:#fff; border:1px solid #e3e8ee; border-radius:50rem; padding:4px 6px; }
+  .chat-composer .form-control { border:0; box-shadow:none !important; background:transparent; }
+  .chat-composer .attach-btn { border:0; background:transparent; color:#64748b; border-radius:50%; }
+  .chat-composer #chat-send { border-radius:50%; width:40px; height:40px; padding:0; background:#0d6e6e; border:0; flex:0 0 auto; }
+</style>
+@endpush
+
 @section('content')
+<div class="applicant-page">
   {{-- Header bar --}}
-  <div class="card">
-    <div class="card-body text-white d-flex flex-wrap justify-content-between align-items-center gap-2" style="{{ $teal }}">
+  <div class="card applicant-hero mb-3">
+    <div class="card-body text-white d-flex flex-wrap justify-content-between align-items-center gap-2">
       <h4 class="mb-0">Applicant Details</h4>
       <div class="d-flex flex-wrap gap-2 align-items-center">
         <a href="{{ $prev ? route('company.applicants.show', $prev) : '#' }}"
@@ -28,7 +59,7 @@
           <form method="POST" action="{{ route('company.applicants.status', $applicant) }}" class="m-0">
             @csrf @method('PUT')
             <select name="status" id="detail-status" class="form-select form-select-sm"
-                    style="min-width:180px; background-color: {{ $statusColors[$applicant->status] ?? '#6c757d' }}; color:#fff; font-weight:600; border:none;"
+                    style="min-width:170px; border-radius:50rem; padding-left:14px; background-color: {{ $statusColors[$applicant->status] ?? '#6c757d' }}; color:#fff; font-weight:600; border:none;"
                     onchange="recolorDetailStatus(this); this.form.submit()">
               @foreach ($statuses as $key => $label)
                 <option value="{{ $key }}" @selected($applicant->status === $key) style="background:#fff;color:#000;">{{ $label }}</option>
@@ -37,7 +68,7 @@
           </form>
         @endpermission
 
-        <a href="{{ route('company.applicants.index') }}" class="btn btn-light btn-sm"><i class="fa fa-times"></i></a>
+        <a href="{{ route('company.applicants.index') }}" class="btn btn-light btn-sm" title="Close"><i class="fa fa-times"></i></a>
       </div>
     </div>
   </div>
@@ -46,36 +77,34 @@
     {{-- Main column --}}
     <div class="col-lg-9">
       <div class="mb-3">
-        <span class="badge badge-light-primary px-3 py-2">
+        <span class="applied-pill">
           APPLIED FOR <strong>{{ $applicant->listing?->job_role ?? $applicant->position ?? '—' }}</strong>
         </span>
       </div>
 
       {{-- Personal Info --}}
-      <div class="card">
+      <div class="card mb-3">
         <div class="card-header text-white" style="{{ $teal }}"><h6 class="mb-0"><i class="fa fa-user me-2"></i>Personal Info</h6></div>
         <div class="card-body">
-          <div class="row">
-            <div class="col-md-3 mb-3">
+          <div class="row align-items-center">
+            <div class="col-md-3 mb-3 text-center text-md-start">
               @if ($applicant->profile_image)
-                <img src="{{ asset('profile_images/'.$applicant->profile_image) }}" alt="photo" class="img-fluid rounded" style="max-width:150px;">
+                <img src="{{ asset('profile_images/'.$applicant->profile_image) }}" alt="photo" class="applicant-photo">
               @else
-                <div class="rounded bg-info text-white d-flex align-items-center justify-content-center" style="width:150px;height:150px;font-size:48px;font-weight:600;">
+                <div class="applicant-photo bg-info text-white d-inline-flex align-items-center justify-content-center" style="font-size:48px;font-weight:600;">
                   {{ strtoupper(substr($applicant->name ?? '?', 0, 1)) }}
                 </div>
               @endif
             </div>
             <div class="col-md-9">
-              <table class="table table-sm mb-0">
-                <tbody>
-                  <tr><th style="width:140px;">Name</th><td>{{ $applicant->name ?? '—' }}</td></tr>
-                  <tr><th>Email</th><td>{{ $applicant->email ?? '—' }}</td></tr>
-                  <tr><th>Phone</th><td>{{ $applicant->phone ?? '—' }}</td></tr>
-                  <tr><th>Gender</th><td>{{ $applicant->gender ?? '—' }}</td></tr>
-                  <tr><th>Address</th><td>{{ $applicant->address ?? '—' }}</td></tr>
-                  <tr><th>Source</th><td>{{ $applicant->source ?? '—' }}</td></tr>
-                </tbody>
-              </table>
+              <div class="info-list">
+                <div><span class="lbl">Name:</span> {{ $applicant->name ?? '—' }}</div>
+                <div><span class="lbl">Email:</span> {{ $applicant->email ?? '—' }}</div>
+                <div><span class="lbl">Phone:</span> {{ $applicant->phone ?? '—' }}</div>
+                <div><span class="lbl">Gender:</span> {{ $applicant->gender ?? '—' }}</div>
+                <div><span class="lbl">Address:</span> {{ $applicant->address ?? '—' }}</div>
+                <div><span class="lbl">Source:</span> {{ $applicant->source ?? '—' }}</div>
+              </div>
             </div>
           </div>
         </div>
@@ -86,33 +115,33 @@
         <div class="card-header text-white" style="{{ $teal }}"><h6 class="mb-0"><i class="fa fa-folder me-2"></i>Documents &amp; Videos</h6></div>
         <div class="card-body d-flex flex-wrap gap-2">
           @if ($applicant->resume)
-            <a href="{{ asset('resumes/'.$applicant->resume) }}" target="_blank" class="btn btn-outline-primary btn-sm"><i class="fa fa-file me-1"></i>View Resume</a>
+            <a href="{{ asset('resumes/'.$applicant->resume) }}" target="_blank" class="btn btn-outline-primary btn-sm doc-btn"><i class="fa fa-file me-1"></i>View Resume</a>
           @else
-            <span class="btn btn-outline-danger btn-sm disabled">Resume Not Uploaded</span>
+            <span class="btn btn-outline-danger btn-sm disabled doc-btn">Resume Not Uploaded</span>
           @endif
 
           @if ($applicant->intro_video)
-            <a href="{{ asset('videos/'.$applicant->intro_video) }}" target="_blank" class="btn btn-outline-primary btn-sm">Intro Video</a>
+            <a href="{{ asset('videos/'.$applicant->intro_video) }}" target="_blank" class="btn btn-outline-primary btn-sm doc-btn">Intro Video</a>
           @else
-            <span class="btn btn-outline-danger btn-sm disabled">Intro Video Not Uploaded</span>
+            <span class="btn btn-outline-danger btn-sm disabled doc-btn">Intro Video Not Uploaded</span>
           @endif
 
           @if ($applicant->screening_video)
-            <a href="{{ asset('videos/'.$applicant->screening_video) }}" target="_blank" class="btn btn-outline-primary btn-sm">Screening Video</a>
+            <a href="{{ asset('videos/'.$applicant->screening_video) }}" target="_blank" class="btn btn-outline-primary btn-sm doc-btn">Screening Video</a>
           @else
-            <span class="btn btn-outline-danger btn-sm disabled">Screening Video Not Uploaded</span>
+            <span class="btn btn-outline-danger btn-sm disabled doc-btn">Screening Video Not Uploaded</span>
           @endif
 
           @if ($applicant->portfolio)
-            <a href="{{ asset('portfolio/'.$applicant->portfolio) }}" target="_blank" class="btn btn-outline-primary btn-sm">Portfolio File</a>
+            <a href="{{ asset('portfolio/'.$applicant->portfolio) }}" target="_blank" class="btn btn-outline-primary btn-sm doc-btn">Portfolio File</a>
           @else
-            <span class="btn btn-outline-danger btn-sm disabled">Portfolio File Not Uploaded</span>
+            <span class="btn btn-outline-danger btn-sm disabled doc-btn">Portfolio File Not Uploaded</span>
           @endif
 
           @if ($applicant->portfolio_url)
-            <a href="{{ $applicant->portfolio_url }}" target="_blank" class="btn btn-outline-primary btn-sm">Portfolio URL</a>
+            <a href="{{ $applicant->portfolio_url }}" target="_blank" class="btn btn-outline-primary btn-sm doc-btn">Portfolio URL</a>
           @else
-            <span class="btn btn-outline-danger btn-sm disabled">Portfolio URL Not Provided</span>
+            <span class="btn btn-outline-danger btn-sm disabled doc-btn">Portfolio URL Not Provided</span>
           @endif
         </div>
       </div>
@@ -163,11 +192,12 @@
 
     {{-- Activity chat panel --}}
     <div class="col-lg-3">
-      <div class="card">
+      <div class="card chat-card">
         <div class="card-header text-white" style="{{ $teal }}">
+          <span class="online-dot"></span>
           <h6 class="mb-0"><i class="fa fa-comments me-2"></i>Activity Chat — {{ $applicant->name ?? 'Applicant' }}</h6>
         </div>
-        <div class="card-body d-flex flex-column p-2" style="height:520px;">
+        <div class="card-body d-flex flex-column p-2" style="height:520px;background:#f7fafa;">
           <div id="chat-messages" class="flex-grow-1 overflow-auto mb-2 px-1"></div>
 
           <div id="file-preview" class="d-none align-items-center gap-2 mb-2 p-2 rounded" style="background:#f0f9f9;font-size:12px;">
@@ -177,18 +207,19 @@
 
           <div class="position-relative">
             <div id="mention-list" class="list-group position-absolute w-100 shadow"
-                 style="bottom:46px; display:none; max-height:160px; overflow:auto; z-index:30;"></div>
-            <div class="input-group">
-              <label class="btn btn-light mb-0" for="chat-file" title="Attach file"><i class="fa fa-paperclip"></i></label>
+                 style="bottom:52px; display:none; max-height:160px; overflow:auto; z-index:30; border-radius:12px; overflow:hidden;"></div>
+            <div class="chat-composer">
+              <label class="btn attach-btn mb-0" for="chat-file" title="Attach file"><i class="fa fa-paperclip"></i></label>
               <input type="file" id="chat-file" class="d-none" accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx">
               <input type="text" id="chat-input" class="form-control" placeholder="Type a message... use @ to mention" autocomplete="off">
-              <button class="btn btn-primary" type="button" id="chat-send"><i class="fa fa-paper-plane"></i></button>
+              <button class="btn btn-primary text-white" type="button" id="chat-send"><i class="fa fa-paper-plane"></i></button>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
+</div>
 @endsection
 
 @push('page-scripts')
@@ -257,23 +288,24 @@
     const reactions = (c.reactions||[]).map(r =>
       `<span class="badge ${r.mine?'bg-primary':'bg-light text-dark border'} me-1" style="cursor:pointer;" data-react="${r.emoji}" data-id="${c.id}">${r.emoji} ${r.count}</span>`).join('');
 
-    const actions = `<span style="font-size:12px;">
+    const actions = `<span style="font-size:13px;">
         <span class="me-2" style="cursor:pointer;" data-act="react" data-id="${c.id}" title="React">😊</span>
         ${c.editable ? `<span class="me-2" style="cursor:pointer;" data-act="edit" data-id="${c.id}" title="Edit (1 min)">✏️</span>` : ''}
         <span style="cursor:pointer;" data-act="del" data-id="${c.id}" data-mine="${c.mine?1:0}" title="Delete">🗑️</span>
       </span>`;
 
     const bg = c.mine ? '#dcf2ea' : '#ffffff';
-    return `<div class="mb-2 chat-msg" data-id="${c.id}">
+    return `<div class="chat-msg" data-id="${c.id}">
         <div class="d-flex ${side}">
-          <div class="px-2 py-1 rounded" style="max-width:88%;background:${bg};border:1px solid #e8edf2;font-size:13px;">
-            ${!c.mine?`<div style="font-size:11px;font-weight:700;color:#0d6e6e;">${esc(c.author)}</div>`:''}
+          <div class="msg-bubble" style="background:${bg};">
+            ${!c.mine?`<div class="msg-author">${esc(c.author)}</div>`:''}
             ${c.body?`<div>${esc(c.body)}</div>`:''}
             ${media}
-            <div class="text-muted" style="font-size:10px;">${c.time}${c.edited?' · edited':''}</div>
+            <div class="msg-time">${c.time}${c.edited?' · edited':''}</div>
+            <div class="msg-actions">${actions}</div>
           </div>
         </div>
-        <div class="d-flex ${c.mine?'justify-content-end':''} align-items-center gap-1 mt-1">${reactions}${actions}</div>
+        ${reactions?`<div class="d-flex ${c.mine?'justify-content-end':''} align-items-center gap-1 mt-1">${reactions}</div>`:''}
       </div>`;
   }
 
@@ -333,7 +365,7 @@
   document.addEventListener('click', e=>{ if(!e.target.closest('[data-act]') && !e.target.closest('.emoji-pop') && !e.target.closest('.del-pop')) closePopups(); });
 
   function startEdit(id){
-    const msg = messages.querySelector('.chat-msg[data-id="'+id+'"] .px-2 > div:not([style])');
+    const msg = messages.querySelector('.chat-msg[data-id="'+id+'"] .msg-bubble > div:not([class])');
     const current = msg ? msg.textContent : '';
     const text = prompt('Edit message (allowed within 1 minute):', current);
     if (text === null || !text.trim()) return;

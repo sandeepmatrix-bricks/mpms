@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Company;
 
+use App\Http\Controllers\Company\Concerns\ScopesToDepartments;
 use App\Http\Controllers\Controller;
 use App\Models\JobCategory;
 use App\Models\Tenant;
@@ -14,15 +15,20 @@ use Illuminate\View\View;
 /**
  * Job Departments (career categories) for a company. Tenant-scoped: a company
  * only ever sees and manages its own departments. Gated by the job_categories
- * module (read/write/edit/delete).
+ * module (read/write/edit/delete). Department-restricted users only see and
+ * manage the departments assigned to them.
  */
 class JobCategoryController extends Controller
 {
+    use ScopesToDepartments;
+
     public function index(Request $request): View
     {
         $company = $this->company($request);
+        $assigned = $this->assignedDepartments($request, $company);
 
         $categories = JobCategory::where('tenant_id', $company->id)
+            ->when($assigned !== null, fn ($q) => $q->whereIn('id', $assigned))
             ->orderBy('name')
             ->get();
 
@@ -58,6 +64,7 @@ class JobCategoryController extends Controller
     {
         $company = $this->company($request);
         $this->ensureOwned($company, $jobCategory);
+        $this->ensureDepartmentInScope($this->assignedDepartments($request, $company), $jobCategory->id);
 
         return view('company.job_categories.edit', [
             'company' => $company,
@@ -69,6 +76,7 @@ class JobCategoryController extends Controller
     {
         $company = $this->company($request);
         $this->ensureOwned($company, $jobCategory);
+        $this->ensureDepartmentInScope($this->assignedDepartments($request, $company), $jobCategory->id);
 
         $data = $this->validated($request, $company, $jobCategory);
 
@@ -87,6 +95,7 @@ class JobCategoryController extends Controller
     {
         $company = $this->company($request);
         $this->ensureOwned($company, $jobCategory);
+        $this->ensureDepartmentInScope($this->assignedDepartments($request, $company), $jobCategory->id);
 
         $name = $jobCategory->name;
         $jobCategory->delete();

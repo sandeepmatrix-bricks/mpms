@@ -1,8 +1,9 @@
 @extends('admin.layouts.auth')
 
-@section('title', 'Company Sign in')
+@section('title', 'Forgot password')
 
 @section('content')
+  <style>.login-card { background: #ffffff !important; }</style>
   <div class="row m-0">
     <div class="col-12 p-0">
       <div class="login-card login-dark">
@@ -14,10 +15,10 @@
             </a>
           </div>
           <div class="login-main">
-            <form class="theme-form" method="POST" action="{{ route('company.login.attempt') }}">
+            <form class="theme-form" method="POST" action="{{ route('company.password.email') }}">
               @csrf
-              <h4>Company Sign in</h4>
-              <p>Access your company workspace</p>
+              <h4>Forgot your password?</h4>
+              <p>Enter your email and we'll send you a reset link.</p>
 
               @if (session('status'))
                 <div class="alert alert-success py-2">{{ session('status') }}</div>
@@ -30,21 +31,13 @@
                 @error('email')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
               </div>
 
-              <div class="form-group">
-                <label class="col-form-label">Password</label>
-                <input class="form-control" type="password" name="password" placeholder="••••••••" required>
+              <div class="form-group mb-0">
+                <button class="btn btn-primary d-block w-100" type="submit">Send reset link</button>
               </div>
 
-              <div class="form-group mb-0">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div class="checkbox p-0">
-                    <input id="remember" type="checkbox" name="remember">
-                    <label class="text-muted" for="remember">Remember me</label>
-                  </div>
-                  <a class="link" href="{{ route('company.password.request') }}">Forgot password?</a>
-                </div>
-                <button class="btn btn-primary d-block w-100 mt-3" type="submit">Sign in</button>
-              </div>
+              <p class="mt-4 mb-0 text-center">
+                <a href="{{ route('company.login') }}">← Back to sign in</a>
+              </p>
             </form>
           </div>
         </div>

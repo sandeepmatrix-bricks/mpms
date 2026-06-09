@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\JobApplicant;
 use App\Models\JobCategory;
 use App\Models\JobListing;
+use App\Models\Membership;
 use App\Models\Tenant;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,7 +37,10 @@ class JobApplicantController extends Controller
         $company = $this->company($request);
         $this->ensureOwned($company, $jobApplicant);
 
-        [$prev, $next] = $this->neighbours($company, $jobApplicant);
+        $assigned = $this->assignedDepartments($request, $company);
+        $this->ensureInScope($jobApplicant, $assigned);
+
+        [$prev, $next] = $this->neighbours($company, $jobApplicant, $assigned);
 
         return view('company.job_applicants.show', [
             'company' => $company,
@@ -89,12 +93,21 @@ class JobApplicantController extends Controller
     private function listView(Request $request, bool $finalSubmit, string $mode): View
     {
         $company = $this->company($request);
+        $assigned = $this->assignedDepartments($request, $company);
+
+        $departments = JobCategory::where('tenant_id', $company->id)
+            ->when($assigned !== null, fn ($q) => $q->whereIn('id', $assigned))
+            ->orderBy('name')->get();
+
+        $listings = JobListing::where('tenant_id', $company->id)
+            ->when($assigned !== null, fn ($q) => $q->whereIn('job_category_id', $assigned))
+            ->orderBy('job_role')->get();
 
         return view('company.job_applicants.index', [
             'company' => $company,
-            'applicants' => $this->applicants($request, $company, $finalSubmit),
-            'departments' => JobCategory::where('tenant_id', $company->id)->orderBy('name')->get(),
-            'listings' => JobListing::where('tenant_id', $company->id)->orderBy('job_role')->get(),
+            'applicants' => $this->applicants($request, $company, $finalSubmit, $assigned),
+            'departments' => $departments,
+            'listings' => $listings,
             'statuses' => JobApplicant::statuses($company->id),
             'statusColors' => JobApplicant::statusColors($company->id),
             'mode' => $mode,
@@ -107,11 +120,15 @@ class JobApplicantController extends Controller
         return $request->user()->company();
     }
 
-    private function applicants(Request $request, Tenant $company, bool $finalSubmit)
+    private function applicants(Request $request, Tenant $company, bool $finalSubmit, ?array $assigned)
     {
         $query = JobApplicant::where('tenant_id', $company->id)
             ->where('final_submit', $finalSubmit)
             ->with('listing');
+
+        // Department-restricted users only see applicants in their assigned departments.
+        $query->when($assigned !== null, fn ($q) => $q->whereHas('listing',
+            fn ($l) => $l->whereIn('job_category_id', $assigned)));
 
         $query->when($request->filled('job_title'), fn ($q) => $q->where('job_listing_id', $request->job_title));
         $query->when($request->filled('gender'), fn ($q) => $q->where('gender', $request->gender));
@@ -139,10 +156,12 @@ class JobApplicantController extends Controller
     }
 
     /** Prev/next applicant in the same list (same final_submit group), latest-first. */
-    private function neighbours(Tenant $company, JobApplicant $applicant): array
+    private function neighbours(Tenant $company, JobApplicant $applicant, ?array $assigned): array
     {
         $ids = JobApplicant::where('tenant_id', $company->id)
             ->where('final_submit', $applicant->final_submit)
+            ->when($assigned !== null, fn ($q) => $q->whereHas('listing',
+                fn ($l) => $l->whereIn('job_category_id', $assigned)))
             ->latest()->pluck('id')->all();
 
         $i = array_search($applicant->id, $ids, true);
@@ -151,6 +170,35 @@ class JobApplicantController extends Controller
             $i > 0 ? $ids[$i - 1] : null,
             ($i !== false && $i < count($ids) - 1) ? $ids[$i + 1] : null,
         ];
+    }
+
+    /**
+     * Departments the logged-in user is restricted to (their membership's
+     * job_category_ids). Returns null when the user is unrestricted (no
+     * departments assigned) — e.g. the company Admin — meaning "see everything".
+     */
+    private function assignedDepartments(Request $request, Tenant $company): ?array
+    {
+        $membership = Membership::where('tenant_id', $company->id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        $ids = $membership?->job_category_ids ?? [];
+
+        return empty($ids) ? null : array_values($ids);
+    }
+
+    /** A restricted user may only open an applicant within their departments. */
+    private function ensureInScope(JobApplicant $applicant, ?array $assigned): void
+    {
+        if ($assigned === null) {
+            return;
+        }
+
+        abort_unless(
+            $applicant->listing && in_array($applicant->listing->job_category_id, $assigned, true),
+            404
+        );
     }
 
     /** Company users available to @mention in the Activity Chat. */

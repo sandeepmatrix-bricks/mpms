@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Company;
 
+use App\Http\Controllers\Concerns\HandlesPasswordResets;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use Illuminate\Http\RedirectResponse;
@@ -15,6 +16,13 @@ use Illuminate\View\View;
  */
 class AuthController extends Controller
 {
+    use HandlesPasswordResets;
+
+    protected function passwordResetConfig(): array
+    {
+        return ['views' => 'company.auth', 'reset' => 'company.password.reset', 'login' => 'company.login'];
+    }
+
     public function showLogin(): View|RedirectResponse
     {
         if (Auth::check() && Auth::user()->company()) {

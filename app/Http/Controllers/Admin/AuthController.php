@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\HandlesPasswordResets;
 use App\Http\Controllers\Controller;
 use App\Support\ResolvesLanding;
 use Illuminate\Http\RedirectResponse;
@@ -11,7 +12,12 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    use ResolvesLanding;
+    use HandlesPasswordResets, ResolvesLanding;
+
+    protected function passwordResetConfig(): array
+    {
+        return ['views' => 'admin.auth', 'reset' => 'admin.password.reset', 'login' => 'admin.login'];
+    }
 
     public function showLogin(): View|RedirectResponse
     {

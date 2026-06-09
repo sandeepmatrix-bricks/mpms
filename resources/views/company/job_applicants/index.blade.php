@@ -122,12 +122,12 @@
                         <span class="text-muted">—</span>
                       @endif
                     </td>
-                    <td data-order="{{ $applicant->status }}">
+                    <td data-order="{{ $applicant->status }}" style="white-space:nowrap;">
                       @permission('applicants.edit')
                         <form method="POST" action="{{ route('company.applicants.status', $applicant) }}" class="m-0">
                           @csrf @method('PUT')
                           <select name="status" class="form-select form-select-sm status-pill"
-                                  style="min-width:150px; background-color: {{ $statusColors[$applicant->status] ?? '#6c757d' }}; color:#fff; font-weight:600; border:none;"
+                                  style="width:160px; border-radius:50rem; padding-left:14px; background-color: {{ $statusColors[$applicant->status] ?? '#6c757d' }}; color:#fff; font-weight:600; border:none;"
                                   onchange="recolorStatus(this); this.form.submit()">
                             @foreach ($statuses as $key => $label)
                               <option value="{{ $key }}" @selected($applicant->status === $key) style="background:#fff;color:#000;">{{ $label }}</option>
@@ -135,11 +135,11 @@
                           </select>
                         </form>
                       @else
-                        <span class="badge" style="background-color: {{ $statusColors[$applicant->status] ?? '#6c757d' }}; color:#fff;">{{ $statuses[$applicant->status] ?? ucfirst($applicant->status) }}</span>
+                        <span class="badge rounded-pill px-3 py-2" style="background-color: {{ $statusColors[$applicant->status] ?? '#6c757d' }}; color:#fff;">{{ $statuses[$applicant->status] ?? ucfirst($applicant->status) }}</span>
                       @endpermission
                     </td>
-                    <td class="text-center">
-                      <a href="{{ route('company.applicants.show', $applicant) }}" class="btn btn-sm btn-primary">Profile</a>
+                    <td class="text-end ps-3" style="white-space:nowrap;">
+                      <a href="{{ route('company.applicants.show', $applicant) }}" class="btn btn-sm btn-primary rounded-pill px-3">Profile</a>
                     </td>
                   </tr>
                 @empty
