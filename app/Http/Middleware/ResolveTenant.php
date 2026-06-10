@@ -38,6 +38,12 @@ class ResolveTenant
                 abort(403, 'Unauthorized tenant access.');
             }
 
+            // A deactivated company is closed to its own members; platform admins
+            // (who hold a platform membership) can still get in to manage it.
+            if ($tenant->status !== 'active' && ! $platformMembership) {
+                abort(403, 'This company account is currently deactivated.');
+            }
+
             $tenantContext->setTenant($tenant->id, false);
         } else {
             if (! $platformMembership) {

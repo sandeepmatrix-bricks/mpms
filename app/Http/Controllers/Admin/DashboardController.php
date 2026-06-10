@@ -3,49 +3,36 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Collection;
-use App\Models\Membership;
-use App\Models\Page;
-use App\Models\PageBlock;
-use App\Models\Record;
+use App\Models\ActivityLog;
 use App\Models\Tenant;
-use App\Models\User;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
     /**
-     * Platform overview. The EnsureAdmin middleware has put the request in
-     * platform mode, so the tenant global scope is bypassed and these counts
-     * span every company.
+     * Platform overview — companies, their status, and which user runs each one.
      */
     public function index(): View
     {
         $stats = [
-            'tenants' => Tenant::count(),
-            'users' => User::count(),
-            'pages' => Page::count(),
-            'collections' => Collection::count(),
-            'records' => Record::count(),
-            'memberships' => Membership::count(),
+            'companies' => Tenant::count(),
+            'active' => Tenant::where('status', 'active')->count(),
+            'inactive' => Tenant::where('status', 'inactive')->count(),
         ];
 
-        $tenants = Tenant::query()
-            ->withCount(['pages', 'collections'])
-            ->orderBy('name')
-            ->get()
-            ->map(function (Tenant $tenant): Tenant {
-                $tenant->records_count = Record::where('tenant_id', $tenant->id)->count();
+        // Companies with their allocated owner (which user handles which company).
+        $companies = Tenant::with('ownerMembership.user')->latest()->take(10)->get();
 
-                return $tenant;
-            });
+        $recentActivity = ActivityLog::with(['user', 'tenant'])->latest()->limit(12)->get();
 
-        // Sections grouped by type across every company (pie chart).
-        $sectionsByType = PageBlock::query()
-            ->selectRaw('type, COUNT(*) as total')
-            ->groupBy('type')
-            ->pluck('total', 'type');
+        // New companies per month over the last 6 months (growth trend).
+        $months = collect(range(5, 0))->map(fn ($i) => now()->subMonths($i)->startOfMonth());
+        $recent = Tenant::where('created_at', '>=', $months->first())->get(['created_at']);
+        $signups = $months->map(fn ($m) => [
+            'label' => $m->format('M'),
+            'total' => $recent->filter(fn ($t) => $t->created_at?->isSameMonth($m))->count(),
+        ]);
 
-        return view('admin.dashboard', compact('stats', 'tenants', 'sectionsByType'));
+        return view('admin.dashboard', compact('stats', 'companies', 'recentActivity', 'signups'));
     }
 }

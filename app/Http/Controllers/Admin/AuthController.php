@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Concerns\HandlesPasswordResets;
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Support\ResolvesLanding;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,13 @@ use Illuminate\View\View;
 
 class AuthController extends Controller
 {
+    use HandlesPasswordResets, ResolvesLanding;
+
+    protected function passwordResetConfig(): array
+    {
+        return ['views' => 'admin.auth', 'reset' => 'admin.password.reset', 'login' => 'admin.login'];
+    }
+
     public function showLogin(): View|RedirectResponse
     {
         if (Auth::check() && ($landing = $this->landingRoute(Auth::user()))) {
@@ -33,19 +41,19 @@ class AuthController extends Controller
                 ->withErrors(['email' => 'These credentials do not match our records.']);
         }
 
-        $landing = $this->landingRoute(Auth::user());
-
-        if ($landing === null) {
+        // The platform console is for Super Admins only. Company users have their
+        // own login at /company/login.
+        if (! Auth::user()->is_admin) {
             Auth::logout();
 
             return back()
                 ->withInput($request->only('email'))
-                ->withErrors(['email' => 'This account has no portal access.']);
+                ->withErrors(['email' => 'Please use the company login at /company/login.']);
         }
 
         $request->session()->regenerate();
 
-        return redirect()->intended($landing);
+        return redirect()->intended(route('admin.dashboard'));
     }
 
     public function logout(Request $request): RedirectResponse
@@ -55,29 +63,5 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('admin.login');
-    }
-
-    /**
-     * Where a user lands after login:
-     *  - platform admins (is_admin) -> the platform console
-     *  - tenant members -> their company portal
-     *  - otherwise null (no access)
-     */
-    private function landingRoute(User $user): ?string
-    {
-        if ($user->is_admin) {
-            return route('admin.dashboard');
-        }
-
-        $membership = $user->memberships()
-            ->whereNotNull('tenant_id')
-            ->with('tenant')
-            ->first();
-
-        if ($membership && $membership->tenant) {
-            return route('tenant.dashboard', $membership->tenant);
-        }
-
-        return null;
     }
 }

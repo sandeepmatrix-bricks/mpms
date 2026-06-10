@@ -14,11 +14,20 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'resolve.tenant' => \App\Http\Middleware\ResolveTenant::class,
+            'resolve.company' => \App\Http\Middleware\ResolveCompany::class,
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
+            'password.changed' => \App\Http\Middleware\EnsurePasswordChanged::class,
+            'permission' => \App\Http\Middleware\EnsurePermission::class,
         ]);
 
-        // Unauthenticated users are sent to the admin login screen.
-        $middleware->redirectGuestsTo(fn () => route('admin.login'));
+        // Logged-in users still holding a temporary password are funnelled to the
+        // change-password screen before they can reach any portal.
+        $middleware->appendToGroup('web', \App\Http\Middleware\EnsurePasswordChanged::class);
+
+        // Unauthenticated users are sent to the login for the area they hit.
+        $middleware->redirectGuestsTo(fn ($request) => $request->is('company*')
+            ? route('company.login')
+            : route('admin.login'));
 
         // EnsureAdmin (platform mode) and ResolveTenant (tenant scope) both set
         // TenantContext, which decides what the global scope shows. They MUST run
@@ -32,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Auth\Middleware\Authenticate::class,
             \App\Http\Middleware\EnsureAdmin::class,
             \App\Http\Middleware\ResolveTenant::class,
+            \App\Http\Middleware\ResolveCompany::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \Illuminate\Auth\Middleware\Authorize::class,
         ]);

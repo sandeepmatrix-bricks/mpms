@@ -3,13 +3,17 @@
 @section('title', 'Sign in')
 
 @section('content')
+  <style>
+    /* Match the login background to the logo's background color */
+    .login-card { background: #ffffff !important; }
+  </style>
   <div class="row m-0">
     <div class="col-12 p-0">
       <div class="login-card login-dark">
         <div>
           <div class="text-center mb-4">
             <a class="logo" href="{{ route('admin.login') }}">
-              <img class="img-fluid for-light" src="{{ asset('admin-assets/images/logo/logo_dark.png') }}" alt="MPMS">
+              <img class="img-fluid for-light" src="{{ asset('admin-assets/images/logo/logo.png') }}" alt="MPMS">
               <img class="img-fluid for-dark" src="{{ asset('admin-assets/images/logo/logo.png') }}" alt="MPMS">
             </a>
           </div>
@@ -18,6 +22,10 @@
               @csrf
               <h4>Sign in to MPMS</h4>
               <p>Platform administrator console</p>
+
+              @if (session('status'))
+                <div class="alert alert-success py-2">{{ session('status') }}</div>
+              @endif
 
               <div class="form-group">
                 <label class="col-form-label">Email Address</label>
@@ -34,9 +42,12 @@
               </div>
 
               <div class="form-group mb-0">
-                <div class="checkbox p-0">
-                  <input id="remember" type="checkbox" name="remember">
-                  <label class="text-muted" for="remember">Remember me</label>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div class="checkbox p-0">
+                    <input id="remember" type="checkbox" name="remember">
+                    <label class="text-muted" for="remember">Remember me</label>
+                  </div>
+                  <a class="link" href="{{ route('admin.password.request') }}">Forgot password?</a>
                 </div>
                 <button class="btn btn-primary d-block w-100 mt-3" type="submit">Sign in</button>
               </div>

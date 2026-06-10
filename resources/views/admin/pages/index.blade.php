@@ -33,7 +33,7 @@
                     </td>
                     <td class="text-end">{{ $page->page_blocks_count }}</td>
                     <td class="text-end">
-                      <a href="{{ route('admin.pages.edit', $page) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                      <a href="{{ route('admin.pages.edit', $page) }}" class="btn btn-sm btn-primary me-1" title="Edit">
                         <i data-feather="edit-2" style="width:15px;height:15px;"></i>
                       </a>
                       <x-admin.delete-button :action="route('admin.pages.destroy', $page)" />

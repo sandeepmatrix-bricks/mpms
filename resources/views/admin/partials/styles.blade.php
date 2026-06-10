@@ -4,8 +4,8 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <meta name="description" content="MPMS — Multi-tenant Portal Management System">
 <meta name="author" content="MPMS">
-<link rel="icon" href="{{ asset('admin-assets/images/favicon.png') }}" type="image/x-icon">
-<link rel="shortcut icon" href="{{ asset('admin-assets/images/favicon.png') }}" type="image/x-icon">
+<link rel="icon" href="{{ asset('admin-assets/images/favicon.ico') }}" type="image/x-icon">
+<link rel="shortcut icon" href="{{ asset('admin-assets/images/favicon.ico') }}" type="image/x-icon">
 <title>@yield('title', 'Dashboard') · MPMS</title>
 
 {{-- Google font --}}
@@ -29,5 +29,14 @@
 <link rel="stylesheet" type="text/css" href="{{ asset('admin-assets/css/style.css') }}">
 <link id="color" rel="stylesheet" href="{{ asset('admin-assets/css/color-1.css') }}" media="screen">
 <link rel="stylesheet" type="text/css" href="{{ asset('admin-assets/css/responsive.css') }}">
+
+{{-- Headings inherit the theme's dark colour even inside coloured/dark bars.
+     Force any heading within a .text-white container to stay white so text
+     never disappears on coloured headers. --}}
+<style>
+  .text-white, .text-white h1, .text-white h2, .text-white h3,
+  .text-white h4, .text-white h5, .text-white h6,
+  .text-white .card-title, .text-white label { color:#fff !important; }
+</style>
 
 @stack('page-styles')

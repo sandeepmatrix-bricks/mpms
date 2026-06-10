@@ -18,6 +18,11 @@ class Membership extends Model
         'user_id',
         'tenant_id',
         'role_id',
+        'job_category_ids',
+    ];
+
+    protected $casts = [
+        'job_category_ids' => 'array',
     ];
 
     public function user(): BelongsTo

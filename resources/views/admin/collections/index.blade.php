@@ -28,7 +28,7 @@
                     <td><code>{{ $collection->key }}</code></td>
                     <td class="text-end">{{ $collection->records_count }}</td>
                     <td class="text-end">
-                      <a href="{{ route('admin.collections.edit', $collection) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                      <a href="{{ route('admin.collections.edit', $collection) }}" class="btn btn-sm btn-primary me-1" title="Edit">
                         <i data-feather="edit-2" style="width:15px;height:15px;"></i>
                       </a>
                       <x-admin.delete-button :action="route('admin.collections.destroy', $collection)" />
