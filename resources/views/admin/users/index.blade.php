@@ -34,7 +34,7 @@
                     <td class="text-end">
                       <div class="d-inline-flex gap-1 justify-content-end">
                         @permission('users.edit')
-                          <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                          <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-primary">Edit</a>
                         @endpermission
                         @permission('users.delete')
                           <x-admin.delete-button :action="route('admin.users.destroy', $user)" label="Remove user" />

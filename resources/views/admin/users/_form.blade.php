@@ -1,5 +1,5 @@
 <div class="row">
-  <div class="col-lg-8">
+  <div class="col-lg-12">
     <div class="card">
       <div class="card-body">
         <form method="POST" action="{{ $action }}">
@@ -16,9 +16,9 @@
             </select>
             @error('tenant_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
             @if ($companies->isEmpty())
-              <small class="text-danger">No active companies — register one under Companies first.</small>
+              <small class="text-danger">No companies available — every active company already has a user. Register a new company, or add more team members from inside the company's own login.</small>
             @else
-              <small class="text-muted">Only active companies are listed. The user logs into this company's portal.</small>
+              <small class="text-muted">Only companies without a user are listed (one user per company). The company creates additional team members from its own login.</small>
             @endif
           </div>
 

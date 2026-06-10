@@ -50,7 +50,19 @@ class UserController extends Controller
 
     public function index(): View
     {
+        // The Super Admin manages only the one user it allocated per company —
+        // the company owner (its first / oldest membership). Extra team members
+        // are created and managed by the company from inside its own login, so
+        // they are intentionally not listed here.
+        $ownerUserIds = Membership::whereNotNull('tenant_id')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get(['user_id', 'tenant_id'])
+            ->unique('tenant_id')
+            ->pluck('user_id');
+
         $users = User::where('is_admin', false)
+            ->whereIn('id', $ownerUserIds)
             ->with(['memberships' => fn ($q) => $q->whereNotNull('tenant_id')->with(['tenant', 'role'])])
             ->orderBy('name')
             ->paginate(15);
@@ -62,7 +74,7 @@ class UserController extends Controller
     {
         return view('admin.users.create', [
             'user' => new User,
-            'companies' => $this->activeCompanies(),
+            'companies' => $this->assignableCompanies(),
             'membership' => new Membership,
         ]);
     }
@@ -75,7 +87,15 @@ class UserController extends Controller
             'phone' => ['nullable', 'string', 'max:50'],
             'auto_password' => ['nullable', 'boolean'],
             'password' => [$request->boolean('auto_password') ? 'nullable' : 'required', 'string', 'min:8'],
-            'tenant_id' => ['required', Rule::exists('tenants', 'id')->where('status', 'active')],
+            'tenant_id' => [
+                'required',
+                Rule::exists('tenants', 'id')->where('status', 'active'),
+                // One user per company from the Super Admin side. Further team
+                // members are created by the company from inside its own login.
+                fn ($attr, $value, $fail) => Membership::where('tenant_id', $value)->exists()
+                    ? $fail('This company already has a user. Additional users are created from inside the company login.')
+                    : null,
+            ],
         ]);
 
         $company = Tenant::findOrFail($data['tenant_id']);
@@ -120,7 +140,7 @@ class UserController extends Controller
 
         return view('admin.users.edit', [
             'user' => $user,
-            'companies' => $this->activeCompanies(),
+            'companies' => $this->assignableCompanies($user->memberships()->whereNotNull('tenant_id')->value('tenant_id')),
             'membership' => $user->memberships()->whereNotNull('tenant_id')->first(),
         ]);
     }
@@ -135,7 +155,14 @@ class UserController extends Controller
             'phone' => ['nullable', 'string', 'max:50'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'password' => ['nullable', 'string', 'min:8'],
-            'tenant_id' => ['required', 'exists:tenants,id'],
+            'tenant_id' => [
+                'required',
+                'exists:tenants,id',
+                // Can't move this user into a company that already has another user.
+                fn ($attr, $value, $fail) => Membership::where('tenant_id', $value)->where('user_id', '!=', $user->id)->exists()
+                    ? $fail('This company already has a user assigned.')
+                    : null,
+            ],
         ]);
 
         $user->update(array_filter([
@@ -181,9 +208,22 @@ class UserController extends Controller
         }
     }
 
-    private function activeCompanies()
+    /**
+     * Active companies that can still be assigned a user: those with no user yet
+     * (one user per company from the Super Admin side). When editing, the user's
+     * own current company is always included so it stays selectable.
+     */
+    private function assignableCompanies(?string $currentTenantId = null)
     {
-        return Tenant::where('status', 'active')->orderBy('name')->get();
+        return Tenant::where('status', 'active')
+            ->where(function ($q) use ($currentTenantId) {
+                $q->whereDoesntHave('memberships');
+                if ($currentTenantId) {
+                    $q->orWhere('id', $currentTenantId);
+                }
+            })
+            ->orderBy('name')
+            ->get();
     }
 
     /** Get (or create) the company's Admin role so the user has access on first login. */

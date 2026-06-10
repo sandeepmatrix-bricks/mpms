@@ -31,7 +31,7 @@
                     <td class="text-end">{{ $role->memberships_count }}</td>
                     <td class="text-end">
                       @permission('roles.edit')
-                        <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                        <a href="{{ route('admin.roles.edit', $role) }}" class="btn btn-sm btn-primary me-1">Edit</a>
                       @endpermission
                       @permission('roles.delete')
                         <x-admin.delete-button :action="route('admin.roles.destroy', $role)" />

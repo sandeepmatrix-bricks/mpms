@@ -37,7 +37,9 @@ class CompanyController extends Controller
 
     public function index(): View
     {
-        $companies = Tenant::withCount('memberships')->orderBy('name')->paginate(15);
+        $companies = Tenant::withCount('memberships')
+            ->with('ownerMembership.user')
+            ->orderBy('name')->paginate(15);
 
         return view('admin.companies.index', compact('companies'));
     }

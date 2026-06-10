@@ -27,7 +27,7 @@
                     <td class="f-w-600">{{ $record->collection?->name }}</td>
                     <td><code class="text-truncate d-inline-block" style="max-width:480px;">{{ json_encode($record->data, JSON_UNESCAPED_SLASHES) }}</code></td>
                     <td class="text-end">
-                      <a href="{{ route('admin.records.edit', $record) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                      <a href="{{ route('admin.records.edit', $record) }}" class="btn btn-sm btn-primary me-1" title="Edit">
                         <i data-feather="edit-2" style="width:15px;height:15px;"></i>
                       </a>
                       <x-admin.delete-button :action="route('admin.records.destroy', $record)" />

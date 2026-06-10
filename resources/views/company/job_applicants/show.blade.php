@@ -13,6 +13,9 @@
 <style>
   .applicant-page .card { border:0; border-radius:14px; box-shadow:0 2px 12px rgba(0,0,0,.06); overflow:hidden; }
   .applicant-page .card-header { border:0; padding:.85rem 1.1rem; }
+  /* Keep all text on the teal header bars white (theme forces dark heading colors). */
+  .applicant-hero h4, .applicant-hero, .applicant-page .card-header,
+  .applicant-page .card-header h6, .applicant-page .card-header i { color:#fff !important; }
   .applicant-hero { border-radius:14px; background:linear-gradient(135deg,#0d6e6e,#0a5757); }
   .applicant-hero .btn { border-radius:50rem; font-weight:600; }
   .applied-pill { background:#e7f4f4; color:#0d6e6e; border-radius:50rem; padding:.5rem 1rem; font-weight:600; }
@@ -44,7 +47,7 @@
   {{-- Header bar --}}
   <div class="card applicant-hero mb-3">
     <div class="card-body text-white d-flex flex-wrap justify-content-between align-items-center gap-2">
-      <h4 class="mb-0">Applicant Details</h4>
+      <h4 class="mb-0 text-white">Applicant Details</h4>
       <div class="d-flex flex-wrap gap-2 align-items-center">
         <a href="{{ $prev ? route('company.applicants.show', $prev) : '#' }}"
            class="btn btn-light btn-sm {{ $prev ? '' : 'disabled' }}"><i class="fa fa-arrow-left me-1"></i>Prev</a>

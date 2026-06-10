@@ -36,7 +36,7 @@
                     </td>
                     <td>{{ $membership->role?->name }}</td>
                     <td class="text-end">
-                      <a href="{{ route('admin.memberships.edit', $membership) }}" class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                      <a href="{{ route('admin.memberships.edit', $membership) }}" class="btn btn-sm btn-primary me-1">Edit</a>
                       <x-admin.delete-button :action="route('admin.memberships.destroy', $membership)" label="Remove" />
                     </td>
                   </tr>

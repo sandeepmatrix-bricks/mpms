@@ -41,7 +41,7 @@
                       <a href="{{ route('tenant.dashboard', $tenant) }}" class="btn btn-sm btn-outline-secondary me-1" title="Open company portal">
                         <i data-feather="external-link" style="width:15px;height:15px;"></i>
                       </a>
-                      <a href="{{ route('admin.tenants.edit', $tenant) }}" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                      <a href="{{ route('admin.tenants.edit', $tenant) }}" class="btn btn-sm btn-primary me-1" title="Edit">
                         <i data-feather="edit-2" style="width:15px;height:15px;"></i>
                       </a>
 

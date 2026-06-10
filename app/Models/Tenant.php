@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Tenant extends Model
 {
@@ -44,6 +45,15 @@ class Tenant extends Model
     public function memberships(): HasMany
     {
         return $this->hasMany(Membership::class);
+    }
+
+    /**
+     * The company's owner login — the user the Super Admin allocated. By
+     * convention this is the company's first (oldest) membership.
+     */
+    public function ownerMembership(): HasOne
+    {
+        return $this->hasOne(Membership::class)->whereNotNull('tenant_id')->oldest();
     }
 
     public function pages(): HasMany

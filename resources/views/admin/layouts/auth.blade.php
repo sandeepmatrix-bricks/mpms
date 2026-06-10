@@ -2,6 +2,11 @@
 <html lang="en">
 <head>
   @include('admin.partials.styles')
+  <style>
+    /* Keep the brand logo compact and tidy on every auth screen. */
+    .login-card .logo { display:inline-block; margin-bottom:8px; }
+    .login-card .logo img { max-height:54px; width:auto; }
+  </style>
 </head>
 <body>
   <div class="container-fluid p-0">

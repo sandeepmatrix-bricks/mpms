@@ -20,7 +20,7 @@
           <div class="table-responsive">
             <table class="table table-hover align-middle">
               <thead>
-                <tr><th>Company</th><th>Email</th><th>Status</th><th class="text-end">Users</th><th class="text-end">Actions</th></tr>
+                <tr><th>Company</th><th>Email</th><th>Status</th><th>User</th><th class="text-end">Actions</th></tr>
               </thead>
               <tbody>
                 @forelse ($companies as $company)
@@ -30,11 +30,18 @@
                     <td>
                       <span class="badge badge-light-{{ $company->status === 'active' ? 'success' : 'secondary' }}">{{ ucfirst($company->status) }}</span>
                     </td>
-                    <td class="text-end">{{ $company->memberships_count }}</td>
+                    {{-- The one user the Super Admin allocated (the company owner). --}}
+                    <td>
+                      @if ($company->ownerMembership?->user)
+                        {{ $company->ownerMembership->user->name }}
+                      @else
+                        <span class="text-muted">— not allocated —</span>
+                      @endif
+                    </td>
                     <td class="text-end">
                       <div class="d-inline-flex flex-wrap gap-1 justify-content-end">
                         @permission('companies.edit')
-                          <a href="{{ route('admin.companies.edit', $company) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                          <a href="{{ route('admin.companies.edit', $company) }}" class="btn btn-sm btn-primary">Edit</a>
                         @endpermission
                         @permission('companies.deactivate')
                           <form method="POST" action="{{ route('admin.companies.toggle-status', $company) }}" class="d-inline">
