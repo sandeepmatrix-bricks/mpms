@@ -20,5 +20,6 @@
   <script src="{{ asset('admin-assets/js/icons/feather-icon/feather.min.js') }}"></script>
   <script>document.addEventListener('DOMContentLoaded', () => window.feather && feather.replace());</script>
   @include('admin.partials.sweetalert')
+  @include('partials.password-toggle')
 </body>
 </html>

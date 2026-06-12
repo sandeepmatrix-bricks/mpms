@@ -16,4 +16,6 @@
 {{-- Theme core --}}
 <script src="{{ asset('admin-assets/js/script.js') }}"></script>
 
+@include('partials.password-toggle')
+
 @stack('page-scripts')

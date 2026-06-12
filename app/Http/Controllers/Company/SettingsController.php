@@ -14,7 +14,16 @@ class SettingsController extends Controller
 {
     public function edit(Request $request): View
     {
-        return view('company.settings.edit', ['company' => $request->user()->company()]);
+        $company = $request->user()->company();
+
+        // The owner (assigned by the Super Admin) first, then users the company
+        // created itself.
+        $members = $company->memberships()
+            ->with(['user', 'role'])
+            ->oldest()
+            ->get();
+
+        return view('company.settings.edit', compact('company', 'members'));
     }
 
     public function update(Request $request): RedirectResponse

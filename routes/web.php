@@ -225,8 +225,9 @@ Route::prefix('company')->name('company.')->group(function () {
 
         /* Job Applicants + Incomplete Records — gated by the applicants module. */
         Route::middleware('permission:applicants.read')->group(function () {
-            Route::get('applicants', [CompanyJobApplicantController::class, 'index'])->name('applicants.index');
-            Route::get('applicants/incomplete', [CompanyJobApplicantController::class, 'incomplete'])->name('applicants.incomplete');
+            Route::match(['get', 'post'], 'applicants', [CompanyJobApplicantController::class, 'index'])->name('applicants.index');
+            Route::match(['get', 'post'], 'applicants/incomplete', [CompanyJobApplicantController::class, 'incomplete'])->name('applicants.incomplete');
+            Route::get('applicants-locations', [CompanyJobApplicantController::class, 'locations'])->name('applicants.locations');
             Route::get('applicants/{jobApplicant}', [CompanyJobApplicantController::class, 'show'])->name('applicants.show');
 
             // Activity Chat (comments + @mentions + reactions + edit/delete).
@@ -237,6 +238,10 @@ Route::prefix('company')->name('company.')->group(function () {
             Route::post('applicants/{jobApplicant}/comments/{comment}/delete-for-me', [CompanyApplicantCommentController::class, 'deleteForMe'])->name('applicants.comments.delete-for-me');
             Route::post('applicants/{jobApplicant}/comments/{comment}/react', [CompanyApplicantCommentController::class, 'react'])->name('applicants.comments.react');
         });
+        // Manually add an applicant (HR entry) — gated by applicants.write.
+        // Distinct path so it doesn't collide with the POST filter on /applicants.
+        Route::post('applicants/store', [CompanyJobApplicantController::class, 'store'])
+            ->middleware('permission:applicants.write')->name('applicants.store');
         Route::put('applicants/{jobApplicant}/status', [CompanyJobApplicantController::class, 'updateStatus'])
             ->middleware('permission:applicants.edit')->name('applicants.status');
         Route::delete('applicants/{jobApplicant}', [CompanyJobApplicantController::class, 'destroy'])
