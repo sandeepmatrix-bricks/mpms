@@ -101,8 +101,8 @@
         @permission('statuses.read')
           <li class="sidebar-list">
             <a class="sidebar-link sidebar-title link-nav {{ $nav('company.statuses.*') }}" href="{{ route('company.statuses.index') }}">
-              <svg class="stroke-icon"><use href="{{ $sprite }}#stroke-tag"></use></svg>
-              <svg class="fill-icon"><use href="{{ $sprite }}#stroke-tag"></use></svg>
+              <svg class="stroke-icon"><use href="{{ $sprite }}#stroke-to-do"></use></svg>
+              <svg class="fill-icon"><use href="{{ $sprite }}#stroke-to-do"></use></svg>
               <span>Application Statuses</span>
             </a>
           </li>
@@ -111,8 +111,8 @@
         @permission('settings.read')
           <li class="sidebar-list">
             <a class="sidebar-link sidebar-title link-nav {{ $nav('company.settings.*') }}" href="{{ route('company.settings.edit') }}">
-              <svg class="stroke-icon"><use href="{{ $sprite }}#stroke-settings"></use></svg>
-              <svg class="fill-icon"><use href="{{ $sprite }}#fill-settings"></use></svg>
+              <svg class="stroke-icon"><use href="{{ $sprite }}#stroke-builders"></use></svg>
+              <svg class="fill-icon"><use href="{{ $sprite }}#stroke-builders"></use></svg>
               <span>Settings</span>
             </a>
           </li>

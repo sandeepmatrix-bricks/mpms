@@ -32,6 +32,29 @@ class JobApplicantController extends Controller
         return $this->listView($request, finalSubmit: false, mode: 'incomplete');
     }
 
+    /** Autocomplete for the Location filter — office names from the pincode list. */
+    public function locations(Request $request)
+    {
+        $q = trim((string) $request->query('q', ''));
+
+        if (strlen($q) < 2 || ! \Illuminate\Support\Facades\Schema::hasTable('pincode_list')) {
+            return response()->json([]);
+        }
+
+        $rows = \Illuminate\Support\Facades\DB::table('pincode_list')
+            ->where('officename', 'like', $q.'%')
+            ->orderBy('officename')
+            ->limit(20)
+            ->get(['officename', 'district', 'statename', 'pincode']);
+
+        return response()->json($rows->map(fn ($r) => [
+            'name' => $r->officename,
+            'district' => $r->district,
+            'state' => $r->statename,
+            'pincode' => $r->pincode,
+        ])->values());
+    }
+
     public function show(Request $request, JobApplicant $jobApplicant): View
     {
         $company = $this->company($request);
@@ -51,6 +74,124 @@ class JobApplicantController extends Controller
             'prev' => $prev,
             'next' => $next,
         ]);
+    }
+
+    /**
+     * Manually add an applicant (HR entry). The chosen designation must be
+     * within the user's department scope. Saved as a completed application so
+     * it appears under Job Applicants (not Incomplete Records).
+     */
+    public function store(Request $request): RedirectResponse
+    {
+        $company = $this->company($request);
+        $assigned = $this->assignedDepartments($request, $company);
+        $statuses = JobApplicant::statuses($company->id);
+
+        $data = $request->validate([
+            'job_listing_id' => ['required', Rule::exists('job_listings', 'id')->where('tenant_id', $company->id)],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'gender' => ['nullable', Rule::in(['Male', 'Female', 'Other'])],
+            // Address is composed from these parts (street + location + city/state/pincode/country).
+            'address_line' => ['nullable', 'string', 'max:500'],
+            'location_name' => ['nullable', 'string', 'max:255'],
+            'city' => ['nullable', 'string', 'max:255'],
+            'state' => ['nullable', 'string', 'max:255'],
+            'pincode' => ['nullable', 'string', 'max:20'],
+            'country' => ['nullable', 'string', 'max:100'],
+            'source' => ['nullable', 'string', 'max:255'],
+            'position' => ['nullable', 'string', 'max:255'],
+            'status' => ['nullable', 'string', Rule::in(array_keys($statuses))],
+            'portfolio_url' => ['nullable', 'url', 'max:255'],
+            'cover_letter' => ['nullable', 'string'],
+            'profile_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
+            'education' => ['nullable', 'array'],
+            'education.*.school' => ['nullable', 'string', 'max:255'],
+            'education.*.program' => ['nullable', 'string', 'max:255'],
+            'education.*.startDate' => ['nullable', 'string', 'max:50'],
+            'education.*.endDate' => ['nullable', 'string', 'max:50'],
+            'work_experience' => ['nullable', 'array'],
+            'work_experience.*.company' => ['nullable', 'string', 'max:255'],
+            'work_experience.*.position' => ['nullable', 'string', 'max:255'],
+            'work_experience.*.startDate' => ['nullable', 'string', 'max:50'],
+            'work_experience.*.endDate' => ['nullable', 'string', 'max:50'],
+        ]);
+
+        // Department scope: the chosen designation must be one the user may access.
+        $listing = JobListing::where('tenant_id', $company->id)->findOrFail($data['job_listing_id']);
+        if ($assigned !== null) {
+            abort_unless(in_array($listing->job_category_id, $assigned, true), 403);
+        }
+
+        $address = $this->composeAddress($data);
+
+        $applicant = JobApplicant::create([
+            'tenant_id' => $company->id,
+            'job_listing_id' => $listing->id,
+            'name' => $data['name'],
+            'email' => $data['email'] ?? null,
+            'phone' => $data['phone'] ?? null,
+            'gender' => $data['gender'] ?? null,
+            'address' => $address,
+            'source' => $data['source'] ?? 'Manual',
+            'position' => $data['position'] ?: $listing->job_role,
+            'portfolio_url' => $data['portfolio_url'] ?? null,
+            'cover_letter' => $data['cover_letter'] ?? null,
+            'profile_image' => $this->uploadFile($request, 'profile_image', 'profile_images'),
+            'resume' => $this->uploadFile($request, 'resume', 'resumes'),
+            'education' => $this->cleanRows($data['education'] ?? []),
+            'work_experience' => $this->cleanRows($data['work_experience'] ?? []),
+            'final_submit' => true,
+            'status' => $data['status'] ?? (array_key_exists('new', $statuses) ? 'new' : array_key_first($statuses)),
+        ]);
+
+        ActivityLog::record('applicant_added', "Added applicant {$applicant->name}", [
+            'subject_type' => JobApplicant::class,
+            'subject_id' => $applicant->id,
+        ]);
+
+        return redirect()->route('company.applicants.index')->with('sweetalert', [
+            'icon' => 'success', 'title' => 'Applicant added', 'text' => $applicant->name,
+        ]);
+    }
+
+    /** Build a single display address from the structured parts. */
+    private function composeAddress(array $data): ?string
+    {
+        $parts = array_filter([
+            $data['address_line'] ?? null,
+            $data['location_name'] ?? null,
+            $data['city'] ?? null,
+            $data['state'] ?? null,
+            $data['pincode'] ?? null,
+            $data['country'] ?? null,
+        ], fn ($v) => filled($v));
+
+        return $parts ? implode(', ', $parts) : null;
+    }
+
+    /** Drop repeatable rows that are entirely empty; return null when nothing left. */
+    private function cleanRows(array $rows): ?array
+    {
+        $clean = array_values(array_filter($rows, fn ($row) => collect($row)->filter(fn ($v) => filled($v))->isNotEmpty()));
+
+        return $clean ?: null;
+    }
+
+    /** Move an uploaded file into public/{dir} and return the stored filename. */
+    private function uploadFile(Request $request, string $field, string $dir): ?string
+    {
+        if (! $request->hasFile($field)) {
+            return null;
+        }
+
+        $file = $request->file($field);
+        $name = time().random_int(10, 999).'.'.$file->getClientOriginalExtension();
+        $file->move(public_path($dir), $name);
+
+        return $name;
     }
 
     public function updateStatus(Request $request, JobApplicant $jobApplicant): RedirectResponse
@@ -111,7 +252,10 @@ class JobApplicantController extends Controller
             'statuses' => JobApplicant::statuses($company->id),
             'statusColors' => JobApplicant::statusColors($company->id),
             'mode' => $mode,
-            'filters' => $request->only(['department', 'job_title', 'location', 'gender', 'from_date', 'to_date', 'search']),
+            'filters' => $request->only(['department', 'job_title', 'location', 'gender', 'from_date', 'to_date', 'search', 'answered', 'education']),
+            'educationPrograms' => \Illuminate\Support\Facades\Schema::hasTable('education_programs')
+                ? \Illuminate\Support\Facades\DB::table('education_programs')->orderBy('program_name')->pluck('program_name')
+                : collect(),
         ]);
     }
 
@@ -137,8 +281,29 @@ class JobApplicantController extends Controller
 
         $query->when($request->filled('department'), fn ($q) => $q->whereHas('listing',
             fn ($l) => $l->where('job_category_id', $request->department)));
-        $query->when($request->filled('location'), fn ($q) => $q->whereHas('listing',
-            fn ($l) => $l->where('location', 'like', '%'.$request->location.'%')));
+
+        // Location: match the applicant's address against the chosen office name.
+        // Office names carry suffixes ("Nerul B.O") while addresses hold just the
+        // locality ("Nerul, Navi Mumbai"), so we also match on the first token.
+        $query->when($request->filled('location'), function ($q) use ($request) {
+            $loc = trim($request->location);
+            $core = strtok($loc, ' ,');
+            $q->where(function ($w) use ($loc, $core) {
+                $w->where('address', 'like', '%'.$loc.'%');
+                if ($core && strlen($core) >= 3 && $core !== $loc) {
+                    $w->orWhere('address', 'like', '%'.$core.'%');
+                }
+            });
+        });
+
+        // Education: match the chosen program against the applicant's education JSON.
+        $query->when($request->filled('education'), fn ($q) => $q->where('education', 'like', '%'.$request->education.'%'));
+
+        // Answered Questions: Yes = applicant submitted answers, No = none.
+        $query->when($request->input('answered') === 'yes', fn ($q) => $q->whereRaw('JSON_LENGTH(answers) > 0'));
+        $query->when($request->input('answered') === 'no', fn ($q) => $q->where(
+            fn ($w) => $w->whereNull('answers')->orWhereRaw('JSON_LENGTH(answers) = 0')
+        ));
 
         $query->when($request->filled('search'), function ($q) use ($request) {
             $term = '%'.$request->search.'%';
